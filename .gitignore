@@ -1,0 +1,7 @@
+/backup
+/lib
+*.ico
+*.exe
+*.dll
+*.dbg
+*.sqlite
