@@ -26,7 +26,11 @@ type
     constructor Create(_Id: integer; _Name: string);
   end;
 
-Var AppDir : String;
+var
+  AppDir: string;
+
+function GetUserFromWindows: string;
+function GetComputerNetName: string;
 
 implementation
 
@@ -34,6 +38,31 @@ constructor TCustomObj.Create(_Id: integer; _Name: string);
 begin
   fId := _Id;
   fName := _Name;
+end;
+
+function GetUserFromWindows: string;
+var
+  UserName: string;
+  UserNameLen: dWord;
+begin
+  UserNameLen := 255;
+  SetLength(UserName, UserNameLen);
+  if GetUserName(PChar(UserName), UserNameLen) then
+    Result := Copy(UserName, 1, UserNameLen - 1)
+  else
+    Result := 'Unknown';
+end;
+
+function GetComputerNetName: string;
+var
+  buffer: array[0..255] of char;
+  Size: dWord;
+begin
+  Size := 256;
+  if GetComputerName(Buffer, Size) then
+    Result := Buffer
+  else
+    Result := 'Undetected';
 end;
 
 end.

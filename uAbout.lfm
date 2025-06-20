@@ -1,0 +1,116 @@
+object fAbout: TfAbout
+  Left = 1317
+  Height = 307
+  Top = 30
+  Width = 473
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'About'
+  ClientHeight = 307
+  ClientWidth = 473
+  Position = poMainFormCenter
+  LCLVersion = '4.0.0.4'
+  OnCreate = FormCreate
+  object lbApplication: TLabel
+    Left = 12
+    Height = 37
+    Top = 8
+    Width = 127
+    Caption = 'Lazpass'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -32
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object Label1: TLabel
+    Left = 12
+    Height = 15
+    Top = 50
+    Width = 142
+    Caption = 'Lazarus password manager'
+    ParentColor = False
+  end
+  object laChecksum: TLabel
+    Cursor = crHandPoint
+    Left = 12
+    Height = 15
+    Hint = 'Copiere în Clipboard'
+    Top = 168
+    Width = 122
+    Caption = 'Checksum: undetected'
+    ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
+  end
+  object laVersion: TLabel
+    Left = 12
+    Height = 15
+    Top = 192
+    Width = 104
+    Caption = 'Version: undetected'
+    ParentColor = False
+  end
+  object laUsername: TLabel
+    Left = 12
+    Height = 15
+    Top = 216
+    Width = 119
+    Caption = 'Username: undetected'
+    ParentColor = False
+  end
+  object laComputer: TLabel
+    Left = 12
+    Height = 15
+    Top = 240
+    Width = 120
+    Caption = 'Computer: undetected'
+    ParentColor = False
+  end
+  object ButtonPanel1: TButtonPanel
+    Left = 6
+    Height = 34
+    Top = 267
+    Width = 461
+    OKButton.Name = 'OKButton'
+    OKButton.DefaultCaption = True
+    HelpButton.Name = 'HelpButton'
+    HelpButton.DefaultCaption = True
+    CloseButton.Name = 'CloseButton'
+    CloseButton.DefaultCaption = True
+    CancelButton.Name = 'CancelButton'
+    CancelButton.DefaultCaption = True
+    TabOrder = 0
+    ShowButtons = [pbClose]
+  end
+  object laLazarus: TLabel
+    Left = 328
+    Height = 15
+    Top = 192
+    Width = 134
+    Alignment = taRightJustify
+    Anchors = [akTop, akLeft, akRight]
+    Caption = 'Lazarus: undetected'
+  end
+  object laFpc: TLabel
+    Left = 375
+    Height = 15
+    Top = 216
+    Width = 87
+    Alignment = taRightJustify
+    Anchors = [akTop, akRight]
+    Caption = 'FPC: undetected'
+  end
+  object laTarget: TLabel
+    Left = 363
+    Height = 15
+    Top = 240
+    Width = 99
+    Alignment = taRightJustify
+    Anchors = [akTop, akRight]
+    Caption = 'Target: undetected'
+  end
+end

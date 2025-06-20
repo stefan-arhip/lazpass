@@ -10,6 +10,8 @@ uses
   Clipbrd;
 
 const
+  icoSilver = 0;
+  icoRed = 1;
   icoGreen = 2;
 
 type
@@ -78,13 +80,17 @@ type
     procedure lvAccountsAdvancedCustomDrawItem(Sender: TCustomListView;
       Item: TListItem; State: TCustomDrawState; Stage: TCustomDrawStage;
       var DefaultDraw: boolean);
+    procedure lvAccountsSelectItem(Sender: TObject; Item: TListItem;
+      Selected: boolean);
     procedure miEntryDeleteClick(Sender: TObject);
     procedure miEntryEditClick(Sender: TObject);
     procedure miEntryNewClick(Sender: TObject);
     procedure miEntryPasswordCopyClick(Sender: TObject);
     procedure miEntryUrlCopyClick(Sender: TObject);
     procedure miEntryUsernameCopyClick(Sender: TObject);
+    procedure miFileCloseClick(Sender: TObject);
     procedure miFileOpenClick(Sender: TObject);
+    procedure miHelpAboutClick(Sender: TObject);
     procedure tbEditAutoTypeClick(Sender: TObject);
     procedure tcMainChange(Sender: TObject);
   private
@@ -102,7 +108,7 @@ implementation
 
 { TfMain }
 
-uses uMiscellaneous, uEntry;
+uses uMiscellaneous, uEntry, uAbout;
 
 var
   sLFiles: TStringList;
@@ -218,6 +224,11 @@ begin
   end;
 end;
 
+procedure TfMain.miHelpAboutClick(Sender: TObject);
+begin
+  fAbout.ShowModal;
+end;
+
 procedure TfMain.lvAccountsAdvancedCustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; Stage: TCustomDrawStage;
   var DefaultDraw: boolean);
@@ -228,6 +239,12 @@ begin
     Sender.Canvas.Font.Color := clRed
   else
     Sender.Canvas.Font.Color := clDefault;}
+end;
+
+procedure TfMain.lvAccountsSelectItem(Sender: TObject; Item: TListItem;
+  Selected: boolean);
+begin
+  tbEditAutoType.Enabled := lvAccounts.Selected <> nil;
 end;
 
 procedure TfMain.miEntryDeleteClick(Sender: TObject);
@@ -344,11 +361,11 @@ end;
 
 procedure TfMain.miEntryPasswordCopyClick(Sender: TObject);
 var
-  Id, i: integer;
+  i: integer;
 begin
   i := lvAccounts.ItemIndex;
   if (tcMain.TabIndex >= 0) and (i >= 0) then
-    ClipBoard.AsText:= lvAccounts.Items[i].SubItems[1];
+    ClipBoard.AsText := lvAccounts.Items[i].SubItems[1];
 end;
 
 procedure TfMain.miEntryUrlCopyClick(Sender: TObject);
@@ -357,16 +374,31 @@ var
 begin
   i := lvAccounts.ItemIndex;
   if (tcMain.TabIndex >= 0) and (i >= 0) then
-    ClipBoard.AsText:= lvAccounts.Items[i].SubItems[2];
+    ClipBoard.AsText := lvAccounts.Items[i].SubItems[2];
 end;
 
 procedure TfMain.miEntryUsernameCopyClick(Sender: TObject);
 var
-  Id, i: integer;
+  i: integer;
 begin
   i := lvAccounts.ItemIndex;
   if (tcMain.TabIndex >= 0) and (i >= 0) then
-    ClipBoard.AsText:= lvAccounts.Items[i].SubItems[0];
+    ClipBoard.AsText := lvAccounts.Items[i].SubItems[0];
+end;
+
+procedure TfMain.miFileCloseClick(Sender: TObject);
+var
+  i: integer;
+begin
+  //tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
+  //  sLFiles.Add(strFile);
+  if MessageDlg('', '', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+  begin
+    i := tcMain.TabIndex;
+    tcMain.Tabs.Delete(i);
+    sLFiles.Delete(i);
+    tcMainChange(Sender);
+  end;
 end;
 
 procedure TfMain.FormCreate(Sender: TObject);
@@ -380,7 +412,8 @@ begin
     sqlite3conn.SQLiteLibraryName := AppDir + 'x32-sqlite3.dll';
     {$EndIf}
     {$IFDEF Win64}
-    sqlite3conn.SQLiteLibraryName := AppDir + 'x64-sqlite3.dll';
+    //sqlite3conn.SQLiteLibraryName := AppDir + 'x64-sqlite3.dll';
+    sqlite3conn.SQLiteLibraryName := AppDir + 'sqlite3.dll';
     //sqlite3Dyn.SQLiteDefaultLibrary := AppDir + 'x64-sqlite3.dll';
     {$ENDIF}
     //SQLite3Connection1.Connected := True;
@@ -399,8 +432,8 @@ end;
 
 procedure TfMain.tbEditAutoTypeClick(Sender: TObject);
 var
-  i: integer;
-  strUsername, strPassword: string;
+  Id, i: integer;
+  strFile, strAccessed, strUsername, strPassword: string;
 begin
   // Example: Send "Hello World!" to the currently active application
   // You might want to use FindWindow and SetForegroundWindow first
@@ -428,6 +461,26 @@ begin
     SendString(strPassword);
     PressKey(VK_RETURN, True); // Press Enter
     PressKey(VK_RETURN, False); // Release Enter
+
+    strFile := sLFiles[tcMain.TabIndex];
+    con.DatabaseName := strFile;
+    con.Connected := True;
+
+    Id := lvAccounts.Items[i].ImageIndex;
+    strAccessed := FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
+
+    sq.SQL.Clear;
+    sq.SQL.Add('Update tAccounts Set Accessed=:Accessed');
+    sq.SQL.Add('Where Id=:Id;');
+    sq.ParamByName('Accessed').AsString := strAccessed;
+    sq.ParamByName('Id').AsInteger := Id;
+    sq.ExecSQL;
+    tr.Commit;
+    sq.Close;
+
+    con.Connected := False;
+
+    lvAccounts.Items[i].StateIndex := icoGreen;
   end;
 end;
 
@@ -456,7 +509,7 @@ begin
     begin
       with lvAccounts.Items.Add do
       begin
-        StateIndex := icoGreen;
+        StateIndex := icoSilver;
         ImageIndex := sq.FieldByName('Id').AsInteger;
         Caption := Format('%d', [lvAccounts.Items.Count]);
         SubItems.Add(sq.FieldByName('Username').AsString);

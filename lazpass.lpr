@@ -10,14 +10,13 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, uMain, uMiscellaneous, uEntry
+  Forms, uMain, uMiscellaneous, uEntry, uAbout
   { you can add units after this };
 
 {$R *.res}
 
 begin
   RequireDerivedFormResource:=True;
-  Application.Title:='project1';
   Application.Scaled:=True;
   {$PUSH}{$WARN 5044 OFF}
   Application.MainFormOnTaskbar:=True;
@@ -25,6 +24,7 @@ begin
   Application.Initialize;
   Application.CreateForm(TfMain, fMain);
   Application.CreateForm(TfEntry, fEntry);
+  Application.CreateForm(TfAbout, fAbout);
   Application.Run;
 end.
 

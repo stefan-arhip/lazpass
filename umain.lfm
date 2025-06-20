@@ -1,13 +1,13 @@
 object fMain: TfMain
-  Left = 245
+  Left = 292
   Height = 322
-  Top = 132
+  Top = 120
   Width = 586
   Caption = 'LazPass'
   ClientHeight = 322
   ClientWidth = 586
   Menu = mMain
-  LCLVersion = '4.0.0.3'
+  LCLVersion = '4.0.0.4'
   OnCreate = FormCreate
   object sbMain: TStatusBar
     Left = 0
@@ -112,6 +112,7 @@ object fMain: TfMain
           ViewStyle = vsReport
           OnAdvancedCustomDrawItem = lvAccountsAdvancedCustomDrawItem
           OnDblClick = miEntryEditClick
+          OnSelectItem = lvAccountsSelectItem
         end
       end
     end
@@ -157,6 +158,7 @@ object fMain: TfMain
       Left = 119
       Top = 2
       Caption = 'Type'
+      Enabled = False
       ImageIndex = 2
       OnClick = tbEditAutoTypeClick
     end
@@ -281,6 +283,7 @@ object fMain: TfMain
       object miFileClose: TMenuItem
         Caption = '&Close'
         ShortCut = 16471
+        OnClick = miFileCloseClick
       end
       object Separator1: TMenuItem
         Caption = '-'
@@ -345,6 +348,7 @@ object fMain: TfMain
       Caption = '&Help'
       object miHelpAbout: TMenuItem
         Caption = '&About...'
+        OnClick = miHelpAboutClick
       end
     end
   end
