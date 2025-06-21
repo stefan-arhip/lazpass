@@ -1,11 +1,11 @@
 object fEntry: TfEntry
-  Left = 866
-  Height = 340
-  Top = 119
+  Left = 1319
+  Height = 388
+  Top = 12
   Width = 412
   BorderIcons = [biSystemMenu]
   Caption = 'Edit Entry'
-  ClientHeight = 340
+  ClientHeight = 388
   ClientWidth = 412
   Position = poMainFormCenter
   LCLVersion = '4.0.0.3'
@@ -13,7 +13,7 @@ object fEntry: TfEntry
   object ButtonPanel1: TButtonPanel
     Left = 6
     Height = 34
-    Top = 300
+    Top = 348
     Width = 400
     OKButton.Name = 'OKButton'
     OKButton.DefaultCaption = True
@@ -64,16 +64,126 @@ object fEntry: TfEntry
     Left = 8
     Height = 15
     Top = 72
-    Width = 21
-    Caption = 'URL'
+    Width = 22
+    Caption = 'Link'
   end
-  object edURL: TEdit
+  object Label4: TLabel
+    Left = 8
+    Height = 15
+    Top = 104
+    Width = 22
+    Caption = 'Title'
+  end
+  object Label5: TLabel
+    Left = 8
+    Height = 15
+    Top = 128
+    Width = 48
+    Caption = 'Category'
+  end
+  object coCategory: TComboBox
+    Left = 72
+    Height = 23
+    Top = 120
+    Width = 328
+    Anchors = [akTop, akLeft, akRight]
+    ItemHeight = 15
+    TabOrder = 3
+    Text = 'coCategory'
+  end
+  object Label6: TLabel
+    Left = 8
+    Height = 15
+    Top = 154
+    Width = 31
+    Caption = 'Notes'
+  end
+  object meNotes: TMemo
+    Left = 72
+    Height = 102
+    Top = 146
+    Width = 328
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Lines.Strings = (
+      'meNotes'
+    )
+    TabOrder = 4
+  end
+  object Label7: TLabel
+    Left = 8
+    Height = 15
+    Top = 264
+    Width = 41
+    Anchors = [akLeft, akBottom]
+    Caption = 'Created'
+  end
+  object edCreated: TEdit
+    Left = 72
+    Height = 23
+    Top = 256
+    Width = 328
+    Anchors = [akLeft, akBottom]
+    Color = clForm
+    ReadOnly = True
+    TabOrder = 5
+    Text = 'edCreated'
+  end
+  object edModified: TEdit
+    Left = 72
+    Height = 23
+    Top = 284
+    Width = 328
+    Anchors = [akLeft, akBottom]
+    Color = clForm
+    ReadOnly = True
+    TabOrder = 6
+    Text = 'edModified'
+  end
+  object Label8: TLabel
+    Left = 8
+    Height = 15
+    Top = 292
+    Width = 48
+    Anchors = [akLeft, akBottom]
+    Caption = 'Modified'
+  end
+  object edAccessed: TEdit
+    Left = 72
+    Height = 23
+    Top = 312
+    Width = 328
+    Anchors = [akLeft, akBottom]
+    Color = clForm
+    ReadOnly = True
+    TabOrder = 7
+    Text = 'edAccessed'
+  end
+  object Label9: TLabel
+    Left = 8
+    Height = 15
+    Top = 320
+    Width = 49
+    Anchors = [akLeft, akBottom]
+    Caption = 'Accessed'
+  end
+  object coLink: TComboBox
     Left = 72
     Height = 23
     Top = 64
     Width = 328
     Anchors = [akTop, akLeft, akRight]
-    TabOrder = 3
-    Text = 'edURL'
+    ItemHeight = 15
+    TabOrder = 8
+    Text = 'coLink'
+  end
+  object coTitle: TComboBox
+    Left = 72
+    Height = 23
+    Top = 96
+    Width = 328
+    Anchors = [akTop, akLeft, akRight]
+    ItemHeight = 15
+    TabOrder = 9
+    Text = 'coTitle'
   end
 end

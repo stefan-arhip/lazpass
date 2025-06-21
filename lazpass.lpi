@@ -26,6 +26,12 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="DateTimeCtrlsDsgn"/>
+      </Item>
+      <Item>
+        <PackageName Value="DateTimeCtrls"/>
+      </Item>
+      <Item>
         <PackageName Value="SQLDBLaz"/>
       </Item>
       <Item>
@@ -61,6 +67,7 @@
         <Filename Value="uAbout.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fAbout"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>

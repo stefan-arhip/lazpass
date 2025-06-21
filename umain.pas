@@ -7,7 +7,7 @@ interface
 uses
   Windows, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
   ComCtrls, Menus, ShellCtrls, PairSplitter, SqlDb, SQLite3Conn, OdbcConn,
-  Clipbrd;
+  Clipbrd, LCLIntf, IniPropStorage;
 
 const
   icoSilver = 0;
@@ -21,8 +21,13 @@ type
   TfMain = class(TForm)
     ilBig: TImageList;
     ilSmall: TImageList;
+    IniPropStorage1: TIniPropStorage;
     lvAccounts: TListView;
-    miCopyURL: TMenuItem;
+    miEntryLinkOpen: TMenuItem;
+    miOpenLink: TMenuItem;
+    miAutoTypeLink: TMenuItem;
+    miEntryAutotypeLink: TMenuItem;
+    miCopyLink: TMenuItem;
     miItemNew: TMenuItem;
     miItemEdit: TMenuItem;
     miItemDelete: TMenuItem;
@@ -40,7 +45,7 @@ type
     miEntryAutotypeUsername: TMenuItem;
     miEntryAutotypePassword: TMenuItem;
     miEntryAutotype: TMenuItem;
-    miEntryUrlCopy: TMenuItem;
+    miEntryLinkCopy: TMenuItem;
     miEntryPasswordCopy: TMenuItem;
     miEntryEdit: TMenuItem;
     miEntryDelete: TMenuItem;
@@ -56,10 +61,14 @@ type
     miFile: TMenuItem;
     mMain: TMainMenu;
     oFile: TOpenDialog;
+    pmFileRecent: TPopupMenu;
     psMain: TPairSplitter;
     pssLeft: TPairSplitterSide;
     pssRight: TPairSplitterSide;
     pmAccounts: TPopupMenu;
+    Separator6: TMenuItem;
+    Separator7: TMenuItem;
+    sFile: TSaveDialog;
     Separator1: TMenuItem;
     Separator2: TMenuItem;
     Separator3: TMenuItem;
@@ -67,6 +76,7 @@ type
     Separator5: TMenuItem;
     con: TSQLite3Connection;
     sq: TSQLQuery;
+    tbFileNew: TToolButton;
     tr: TSQLTransaction;
     sbMain: TStatusBar;
     tbCards: TToolBar;
@@ -76,6 +86,7 @@ type
     tcMain: TTabControl;
     ToolButton1: TToolButton;
     tvAccounts: TTreeView;
+    procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lvAccountsAdvancedCustomDrawItem(Sender: TCustomListView;
       Item: TListItem; State: TCustomDrawState; Stage: TCustomDrawStage;
@@ -84,11 +95,13 @@ type
       Selected: boolean);
     procedure miEntryDeleteClick(Sender: TObject);
     procedure miEntryEditClick(Sender: TObject);
+    procedure miEntryLinkOpenClick(Sender: TObject);
     procedure miEntryNewClick(Sender: TObject);
     procedure miEntryPasswordCopyClick(Sender: TObject);
-    procedure miEntryUrlCopyClick(Sender: TObject);
+    procedure miEntryLinkCopyClick(Sender: TObject);
     procedure miEntryUsernameCopyClick(Sender: TObject);
     procedure miFileCloseClick(Sender: TObject);
+    procedure miFileNewClick(Sender: TObject);
     procedure miFileOpenClick(Sender: TObject);
     procedure miHelpAboutClick(Sender: TObject);
     procedure tbEditAutoTypeClick(Sender: TObject);
@@ -211,15 +224,33 @@ end;
 procedure TfMain.miFileOpenClick(Sender: TObject);
 var
   strFile, strName, strExt: string;
+  Item: TMenuItem;
+  i, j: integer;
 begin
   if oFile.Execute then
   begin
     strFile := oFile.FileName;
-    strExt := ExtractFileExt(strFile);
-    strName := ExtractFileName(strFile);
-    strName := Copy(strName, 1, Length(strName) - Length(strExt));
-    tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
-    sLFiles.Add(strFile);
+    j := -1;
+    for i := 1 to sLFiles.Count do
+      if LowerCase(strFile) = sLFiles[i - 1] then
+        j := i - 1;
+    if j = -1 then
+    begin
+      strExt := ExtractFileExt(strFile);
+      strName := ExtractFileName(strFile);
+      strName := Copy(strName, 1, Length(strName) - Length(strExt));
+
+      sLFiles.Add(LowerCase(strFile));
+      tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
+      Item := TMenuItem.Create(nil);
+      Item.Caption := strFile;
+      Item.Hint := strFile;
+      //Item.OnClick:= ;
+      pmFileRecent.Items.Add(Item);
+      tcMain.TabIndex := tcMain.Tabs.Count - 1;
+    end
+    else
+      tcMain.TabIndex := j;
     tcMainChange(Sender);
   end;
 end;
@@ -293,17 +324,53 @@ begin
     fEntry.Caption := 'Edit Entry';
     fEntry.edUsername.Text := sq.FieldByName('Username').AsString;
     fEntry.edPassword.Text := sq.FieldByName('Password').AsString;
-    fEntry.edURL.Text := sq.FieldByName('URL').AsString;
+    fEntry.coLink.Text := sq.FieldByName('Link').AsString;
+    fEntry.coTitle.Text := sq.FieldByName('Title').AsString;
+    fEntry.coCategory.Text := sq.FieldByName('Category').AsString;
+    fEntry.meNotes.Text := sq.FieldByName('Notes').AsString;
+    fEntry.edCreated.Text := sq.FieldByName('Created').AsString;
+    fEntry.edModified.Text := sq.FieldByName('Modified').AsString;
+    fEntry.edAccessed.Text := sq.FieldByName('Accessed').AsString;
+    sq.Close;
+    sq.SQL.Clear;
+    sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
+    sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
+    sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
+    sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
+    sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
+    sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
+    sq.Open;
+    fEntry.coLink.Items.Clear;
+    fEntry.coTitle.Items.Clear;
+    fEntry.coCategory.Items.Clear;
+    while not sq.EOF do
+    begin
+      case sq.FieldByName('B').AsInteger of
+        0:
+          fEntry.coLink.Items.Add(sq.FieldByName('A').AsString);
+        1:
+          fEntry.coTitle.Items.Add(sq.FieldByName('A').AsString);
+        2:
+          fEntry.coCategory.Items.Add(sq.FieldByName('A').AsString);
+      end;
+      sq.Next;
+    end;
     sq.Close;
     if fEntry.Execute then
     begin
       sq.SQL.Clear;
       sq.SQL.Add('Update tAccounts ');
-      sq.SQL.Add('Set Username=:Username,Password=:Password,URL=:URL ');
+      sq.SQL.Add('Set Username=:Username,Password=:Password,Link=:Link,');
+      sq.SQL.Add('Title=:Title,Category=:Category,Notes=:Notes,Modified=:Modified');
       sq.SQL.Add('Where Id=:Id;');
       sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
       sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
-      sq.ParamByName('URL').AsString := fEntry.edURL.Text;
+      sq.ParamByName('Link').AsString := fEntry.coLink.Text;
+      sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
+      sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
+      sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
+      sq.ParamByName('Modified').AsString :=
+        FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
       sq.ParamByName('Id').AsInteger := Id;
       sq.ExecSQL;
       tr.Commit;
@@ -315,13 +382,22 @@ begin
       sq.Open;
       lvAccounts.Items[i].SubItems[0] := sq.FieldByName('Username').AsString;
       lvAccounts.Items[i].SubItems[1] := sq.FieldByName('Password').AsString;
-      lvAccounts.Items[i].SubItems[2] := sq.FieldByName('URL').AsString;
+      lvAccounts.Items[i].SubItems[2] := sq.FieldByName('Link').AsString;
       sq.Close;
     end;
 
     sq.Close;
     con.Connected := False;
   end;
+end;
+
+procedure TfMain.miEntryLinkOpenClick(Sender: TObject);
+var
+  i: integer;
+begin
+  i := lvAccounts.ItemIndex;
+  if i > -1 then
+    LCLIntf.OpenDocument(lvAccounts.Items[i].SubItems[2]);
 end;
 
 procedure TfMain.miEntryNewClick(Sender: TObject);
@@ -336,18 +412,53 @@ begin
     fEntry.Caption := 'New Entry';
     fEntry.edUsername.Text := '';
     fEntry.edPassword.Text := '';
-    fEntry.edURL.Text := '';
+    fEntry.coLink.Text := '';
+    fEntry.coTitle.Text := '';
+    fEntry.coCategory.Text := '';
+    fEntry.meNotes.Text := '';
+    fEntry.edCreated.Text := '';
+    fEntry.edModified.Text := '';
+    fEntry.edAccessed.Text := '';
+    sq.Close;
+    sq.SQL.Clear;
+    sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
+    sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
+    sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
+    sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
+    sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
+    sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
+    sq.Open;
+    fEntry.coLink.Items.Clear;
+    fEntry.coTitle.Items.Clear;
+    fEntry.coCategory.Items.Clear;
+    while not sq.EOF do
+    begin
+      case sq.FieldByName('B').AsInteger of
+        0:
+          fEntry.coLink.Items.Add(sq.FieldByName('A').AsString);
+        1:
+          fEntry.coTitle.Items.Add(sq.FieldByName('A').AsString);
+        2:
+          fEntry.coCategory.Items.Add(sq.FieldByName('A').AsString);
+      end;
+      sq.Next;
+    end;
     sq.Close;
     if fEntry.Execute then
     begin
       strCreated := FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
 
       sq.SQL.Clear;
-      sq.SQL.Add('Insert Into tAccounts (Username,Password,URL,Created)');
-      sq.SQL.Add('Values (:Username,:Password,:URL,:Created);');
+      sq.SQL.Add('Insert Into tAccounts');
+      sq.SQL.Add('(Username,Password,Link,Title,Category,Notes,Created)');
+      sq.SQL.Add('Values');
+      sq.SQL.Add('(:Username,:Password,:Link,:Title,:Category,:Notes,:Created);');
       sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
       sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
-      sq.ParamByName('URL').AsString := fEntry.edURL.Text;
+      sq.ParamByName('Link').AsString := fEntry.coLink.Text;
+      sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
+      sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
+      sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
       sq.ParamByName('Created').AsString := strCreated;
       sq.ExecSQL;
       tr.Commit;
@@ -368,7 +479,7 @@ begin
     ClipBoard.AsText := lvAccounts.Items[i].SubItems[1];
 end;
 
-procedure TfMain.miEntryUrlCopyClick(Sender: TObject);
+procedure TfMain.miEntryLinkCopyClick(Sender: TObject);
 var
   Id, i: integer;
 begin
@@ -392,11 +503,54 @@ var
 begin
   //tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
   //  sLFiles.Add(strFile);
-  if MessageDlg('', '', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+  if tcMain.TabIndex > -1 then
+    if MessageDlg('Close', 'Close file ' + tcMain.Tabs[tcMain.TabIndex] +
+      '?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    begin
+      i := tcMain.TabIndex;
+      tcMain.Tabs.Delete(i);
+      sLFiles.Delete(i);
+      tcMainChange(Sender);
+    end;
+end;
+
+procedure TfMain.miFileNewClick(Sender: TObject);
+var
+  strFile, strName, strExt: string;
+begin
+  strFile := 'New';
+  sFile.FileName := strFile + sFile.DefaultExt;
+  if sFile.Execute then
   begin
-    i := tcMain.TabIndex;
-    tcMain.Tabs.Delete(i);
-    sLFiles.Delete(i);
+    strFile := sFile.FileName;
+    con.DatabaseName := strFile;
+    if FileExists(strFile) then DeleteFile(strFile);
+    con.Connected := True;
+    sq.Close;
+    sq.SQL.Clear;
+    sq.SQL.Add('CREATE TABLE tAccounts ( ' +
+      'Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' + 'Title TEXT,' +
+      'Username TEXT,' + 'Password TEXT,' + 'Link TEXT,' + 'Notes TEXT,' +
+      'Created TEXT(23),' + 'Modified TEXT(23),' + 'Accessed TEXT(23),' +
+      'Icon BLOB,' + 'AutoType TEXT DEFAULT (''{username}{tab}{password}{enter}''),' +
+      'Category TEXT);');
+    sq.ExecSQL;
+    tr.Commit;
+    sq.Close;
+    con.Connected := False;
+
+    strExt := ExtractFileExt(strFile);
+    strName := ExtractFileName(strFile);
+    strName := Copy(strName, 1, Length(strName) - Length(strExt));
+
+    sLFiles.Add(LowerCase(strFile));
+    tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
+    //Item := TMenuItem.Create(nil);
+    //Item.Caption := strFile;
+    //Item.Hint := strFile;
+    //Item.OnClick:= ;
+    //pmFileRecent.Items.Add(Item);
+    tcMain.TabIndex := tcMain.Tabs.Count - 1;
     tcMainChange(Sender);
   end;
 end;
@@ -408,26 +562,44 @@ begin
   AppDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
 
   try
-    {$IfDef Win32}
+    {$IFDEF WIN32}
     sqlite3conn.SQLiteLibraryName := AppDir + 'x32-sqlite3.dll';
-    {$EndIf}
-    {$IFDEF Win64}
-    //sqlite3conn.SQLiteLibraryName := AppDir + 'x64-sqlite3.dll';
-    sqlite3conn.SQLiteLibraryName := AppDir + 'sqlite3.dll';
+    {$ENDIF}
+    {$IFDEF WIN64}
+    sqlite3conn.SQLiteLibraryName := AppDir + 'x64-sqlite3.dll';
     //sqlite3Dyn.SQLiteDefaultLibrary := AppDir + 'x64-sqlite3.dll';
     {$ENDIF}
+    if not FileExists(sqlite3conn.SQLiteLibraryName) then
+      sqlite3conn.SQLiteLibraryName := AppDir + 'sqlite3.dll';
     //SQLite3Connection1.Connected := True;
   except
-    {$IfDef Windows}
+    {$IFDEF WINDOWS}
     MessageDlg('Library sqlite3.dll not found!', mtError, [mbOK], 0);
-    {$Else}
+    {$ELSE}
     MessageDlg('Library libsqlite3.so not found!'#13#13 +
       'Type this in Terminal:'#13 + 'sudo apt-get install libsqlite3-dev',
       mtError, [mbOK], 0);
-    {$EndIf}
+    {$ENDIF}
     Application.Terminate;
   end;
   sq.PacketRecords := -1;
+end;
+
+procedure TfMain.FormActivate(Sender: TObject);
+var
+  strFile, strName, strExt: string;
+begin
+  strFile := sbMain.Hint;
+  if FileExists(strFile) then
+  begin
+    strExt := ExtractFileExt(strFile);
+    strName := ExtractFileName(strFile);
+    strName := Copy(strName, 1, Length(strName) - Length(strExt));
+
+    sLFiles.Add(LowerCase(strFile));
+    tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
+    tcMainChange(Sender);
+  end;
 end;
 
 procedure TfMain.tbEditAutoTypeClick(Sender: TObject);
@@ -505,6 +677,7 @@ begin
     sq.Open;
     sbMain.Panels[0].Text := Format('%d entries', [sq.RecordCount]);
     sbMain.Panels[1].Text := strFile;
+    sbMain.Hint := strFile;
     while not sq.EOF do
     begin
       with lvAccounts.Items.Add do
@@ -514,7 +687,7 @@ begin
         Caption := Format('%d', [lvAccounts.Items.Count]);
         SubItems.Add(sq.FieldByName('Username').AsString);
         SubItems.Add(sq.FieldByName('Password').AsString);
-        SubItems.Add(sq.FieldByName('URL').AsString);
+        SubItems.Add(sq.FieldByName('Link').AsString);
       end;
       sq.Next;
     end;
