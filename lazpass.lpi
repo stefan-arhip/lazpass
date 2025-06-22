@@ -70,6 +70,22 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
+      <Unit>
+        <Filename Value="uoptions.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fOptions"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="uOptions"/>
+      </Unit>
+      <Unit>
+        <Filename Value="udatamodule.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fDm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="DataModule"/>
+        <UnitName Value="uDataModule"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

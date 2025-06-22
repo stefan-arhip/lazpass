@@ -31,8 +31,12 @@ var
 
 function GetUserFromWindows: string;
 function GetComputerNetName: string;
+procedure ExtractWords(const str: string; var Words: TStringList);
+function GetPasswordFromDB(strFile: string; Id: integer): string;
 
 implementation
+
+uses uDataModule, uOptions;
 
 constructor TCustomObj.Create(_Id: integer; _Name: string);
 begin
@@ -63,6 +67,55 @@ begin
     Result := Buffer
   else
     Result := 'Undetected';
+end;
+
+procedure ExtractWords(const str: string; var Words: TStringList);
+var
+  StartPos, EndPos: integer;
+  CurrentWord: string;
+begin
+  StartPos := 1;
+  Words := TStringList.Create;
+  try
+    while StartPos <= Length(str) do
+    begin
+      EndPos := Pos('{', str, StartPos);
+      if EndPos = 0 then
+        Break;
+      StartPos := EndPos;
+      EndPos := Pos('}', str, StartPos);
+      if EndPos = 0 then
+        Break;
+      CurrentWord := Copy(str, StartPos, EndPos - StartPos + 1);
+      if CurrentWord <> '' then
+        Words.Add(CurrentWord);
+      StartPos := EndPos + 1;
+    end;
+  except
+    on E: Exception do
+    begin
+      Writeln('Exception: ' + E.Message);
+      Words.Free;
+    end;
+  end;
+end;
+
+function GetPasswordFromDB(strFile: string; Id: integer): string;
+begin
+  fdm.con.DatabaseName := strFile;
+  fdm.con.Connected := True;
+
+  fdm.sq.Close;
+  if fOptions.chEncryptDatabase.Checked then
+    fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+  fdm.sq.SQL.Clear;
+  fdm.sq.SQL.Add('Select Password From tAccounts Where Id=:Id');
+  fdm.sq.ParamByName('Id').AsInteger := Id;
+  fdm.sq.Open;
+  if fdm.sq.RecordCount = 1 then
+    Result := fdm.sq.FieldByName('Password').AsString;
+  fdm.sq.Close;
+  fdm.con.Connected := False;
 end;
 
 end.

@@ -1,21 +1,20 @@
 object fMain: TfMain
   Left = 278
-  Height = 322
+  Height = 380
   Top = 134
-  Width = 586
+  Width = 600
   Caption = 'LazPass'
-  ClientHeight = 322
-  ClientWidth = 586
+  ClientHeight = 380
+  ClientWidth = 600
   Menu = mMain
   SessionProperties = 'Height;Left;Top;Width;sbMain.Hint'
   LCLVersion = '4.0.0.3'
   OnActivate = FormActivate
-  OnCreate = FormCreate
   object sbMain: TStatusBar
     Left = 0
     Height = 23
-    Top = 299
-    Width = 586
+    Top = 357
+    Width = 600
     Panels = <    
       item
         Width = 100
@@ -27,31 +26,31 @@ object fMain: TfMain
   end
   object tcMain: TTabControl
     Left = 0
-    Height = 242
+    Height = 300
     Top = 57
-    Width = 586
+    Width = 600
     OnChange = tcMainChange
     TabPosition = tpBottom
     Align = alClient
     TabOrder = 1
     object psMain: TPairSplitter
       Left = 2
-      Height = 237
+      Height = 295
       Top = 2
-      Width = 582
+      Width = 596
       Align = alClient
       Position = 152
       object pssLeft: TPairSplitterSide
         Cursor = crArrow
         Left = 0
-        Height = 237
+        Height = 295
         Top = 0
         Width = 152
         ClientWidth = 152
-        ClientHeight = 237
+        ClientHeight = 295
         object tvAccounts: TTreeView
           Left = 0
-          Height = 237
+          Height = 295
           Top = 0
           Width = 152
           Align = alClient
@@ -65,24 +64,27 @@ object fMain: TfMain
             F9FFFFFF020001000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000
             00000004000000526F6F74
           }
+          OnSelectionChanged = tvAccountsSelectionChanged
         end
       end
       object pssRight: TPairSplitterSide
         Cursor = crArrow
         Left = 157
-        Height = 237
+        Height = 295
         Top = 0
-        Width = 425
-        ClientWidth = 425
-        ClientHeight = 237
+        Width = 439
+        ClientWidth = 439
+        ClientHeight = 295
         object lvAccounts: TListView
           Left = 0
-          Height = 237
+          Height = 295
           Top = 0
-          Width = 425
+          Width = 439
           Align = alClient
+          AutoSortIndicator = True
           Columns = <          
             item
+              Alignment = taRightJustify
               AutoSize = True
               Caption = '#'
               Width = 22
@@ -107,12 +109,11 @@ object fMain: TfMain
           ReadOnly = True
           RowSelect = True
           ScrollBars = ssAutoBoth
-          SortColumn = 0
           SortType = stBoth
           StateImages = ilSmall
           TabOrder = 0
           ViewStyle = vsReport
-          OnAdvancedCustomDrawItem = lvAccountsAdvancedCustomDrawItem
+          OnCustomDrawItem = lvAccountsCustomDrawItem
           OnDblClick = miEntryEditClick
           OnSelectItem = lvAccountsSelectItem
         end
@@ -123,7 +124,7 @@ object fMain: TfMain
     Left = 0
     Height = 57
     Top = 0
-    Width = 586
+    Width = 600
     ButtonHeight = 55
     ButtonWidth = 55
     Caption = 'tbCards'
@@ -132,8 +133,9 @@ object fMain: TfMain
     TabOrder = 2
     object tbFileOpen: TToolButton
       Left = 56
+      Hint = 'Open'
       Top = 2
-      Caption = '&Open...'
+      Caption = '&Open'
       DropdownMenu = pmFileRecent
       ImageIndex = 1
       ParentShowHint = False
@@ -142,28 +144,32 @@ object fMain: TfMain
       OnClick = miFileOpenClick
     end
     object tbFileSave: TToolButton
-      Left = 186
+      Left = 123
       Hint = 'Save'
       Top = 2
-      Caption = '&Save'
+      Caption = '&Save As'
+      Enabled = False
       ImageIndex = 2
       ParentShowHint = False
       ShowHint = True
     end
     object ToolButton1: TToolButton
-      Left = 123
+      Left = 178
       Height = 55
       Top = 2
       Caption = 'ToolButton1'
       Style = tbsSeparator
     end
     object tbEditAutoType: TToolButton
-      Left = 131
-      Hint = 'Auto Type'
+      Left = 186
+      Hint = '{username}{tab}{password}{enter}'
       Top = 2
       Caption = 'Type'
       Enabled = False
       ImageIndex = 3
+      ParentShowHint = False
+      ShowHint = True
+      Style = tbsDropDown
       OnClick = tbEditAutoTypeClick
     end
     object tbFileNew: TToolButton
@@ -172,6 +178,8 @@ object fMain: TfMain
       Top = 2
       Caption = '&New'
       ImageIndex = 0
+      ParentShowHint = False
+      ShowHint = True
       OnClick = miFileNewClick
     end
   end
@@ -358,16 +366,23 @@ object fMain: TfMain
         Caption = 'Perform Auto-&Type'
         object miEntryAutotypeAll: TMenuItem
           Caption = '{username}{tab}{password}{enter}'
+          Hint = '{username}{tab}{password}{enter}'
           OnClick = tbEditAutoTypeClick
         end
         object miEntryAutotypeUsername: TMenuItem
           Caption = '{username}'
+          Hint = '{username}'
+          OnClick = tbEditAutoTypeClick
         end
         object miEntryAutotypePassword: TMenuItem
           Caption = '{password}'
+          Hint = '{password}'
+          OnClick = tbEditAutoTypeClick
         end
         object miEntryAutotypeLink: TMenuItem
-          Caption = '{link}'
+          Caption = '{link}{enter}'
+          Hint = '{link}{enter}'
+          OnClick = tbEditAutoTypeClick
         end
       end
       object Separator7: TMenuItem
@@ -382,6 +397,7 @@ object fMain: TfMain
       Caption = '&Tools'
       object miToolsOptions: TMenuItem
         Caption = '&Options'
+        OnClick = miToolsOptionsClick
       end
     end
     object miHelp: TMenuItem
@@ -555,16 +571,23 @@ object fMain: TfMain
       Caption = 'Perform &Auto-Type'
       object miAutoTypeAll: TMenuItem
         Caption = '{username}{tab}{password}{enter}'
+        Hint = '{username}{tab}{password}{enter}'
         OnClick = tbEditAutoTypeClick
       end
       object miAutoTypeUsername: TMenuItem
         Caption = '{username}'
+        Hint = '{username}'
+        OnClick = tbEditAutoTypeClick
       end
       object miAutoTypePassword: TMenuItem
         Caption = '{password}'
+        Hint = '{password}'
+        OnClick = tbEditAutoTypeClick
       end
       object miAutoTypeLink: TMenuItem
-        Caption = '{link}'
+        Caption = '{link}{enter}'
+        Hint = '{link}{enter}'
+        OnClick = tbEditAutoTypeClick
       end
     end
     object Separator5: TMenuItem
@@ -605,32 +628,6 @@ object fMain: TfMain
       OnClick = miEntryLinkOpenClick
     end
   end
-  object con: TSQLite3Connection
-    Connected = False
-    LoginPrompt = False
-    KeepConnection = False
-    Transaction = tr
-    LogEvents = []
-    AlwaysUseBigint = False
-    Left = 416
-    Top = 104
-  end
-  object tr: TSQLTransaction
-    Active = False
-    Action = caNone
-    Database = con
-    Left = 456
-    Top = 104
-  end
-  object sq: TSQLQuery
-    FieldDefs = <>
-    Database = con
-    Transaction = tr
-    Params = <>
-    Macros = <>
-    Left = 496
-    Top = 104
-  end
   object pmFileRecent: TPopupMenu
     Left = 296
     Top = 216
@@ -642,7 +639,7 @@ object fMain: TfMain
     Left = 528
     Top = 8
   end
-  object IniPropStorage1: TIniPropStorage
+  object iniMain: TIniPropStorage
     StoredValues = <>
     IniFileName = 'Lazpass.ini'
     IniSection = 'Main'

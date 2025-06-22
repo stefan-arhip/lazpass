@@ -1,15 +1,15 @@
 object fAbout: TfAbout
   Left = 1317
-  Height = 307
+  Height = 300
   Top = 30
-  Width = 473
+  Width = 480
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'About'
-  ClientHeight = 307
-  ClientWidth = 473
+  ClientHeight = 300
+  ClientWidth = 480
   Position = poMainFormCenter
-  LCLVersion = '4.0.0.4'
+  LCLVersion = '4.0.0.3'
   OnCreate = FormCreate
   object lbApplication: TLabel
     Left = 12
@@ -73,8 +73,8 @@ object fAbout: TfAbout
   object ButtonPanel1: TButtonPanel
     Left = 6
     Height = 34
-    Top = 267
-    Width = 461
+    Top = 260
+    Width = 468
     OKButton.Name = 'OKButton'
     OKButton.DefaultCaption = True
     HelpButton.Name = 'HelpButton'
@@ -90,13 +90,13 @@ object fAbout: TfAbout
     Left = 328
     Height = 15
     Top = 192
-    Width = 134
+    Width = 141
     Alignment = taRightJustify
     Anchors = [akTop, akLeft, akRight]
     Caption = 'Lazarus: undetected'
   end
   object laFpc: TLabel
-    Left = 375
+    Left = 382
     Height = 15
     Top = 216
     Width = 87
@@ -105,10 +105,10 @@ object fAbout: TfAbout
     Caption = 'FPC: undetected'
   end
   object laTarget: TLabel
-    Left = 363
+    Left = 371
     Height = 15
     Top = 240
-    Width = 99
+    Width = 98
     Alignment = taRightJustify
     Anchors = [akTop, akRight]
     Caption = 'Target: undetected'

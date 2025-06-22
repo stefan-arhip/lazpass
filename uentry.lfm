@@ -1,20 +1,20 @@
 object fEntry: TfEntry
-  Left = 1319
-  Height = 388
-  Top = 12
-  Width = 412
+  Left = 1321
+  Height = 380
+  Top = 28
+  Width = 400
   BorderIcons = [biSystemMenu]
   Caption = 'Edit Entry'
-  ClientHeight = 388
-  ClientWidth = 412
+  ClientHeight = 380
+  ClientWidth = 400
   Position = poMainFormCenter
   LCLVersion = '4.0.0.3'
   OnActivate = FormActivate
   object ButtonPanel1: TButtonPanel
     Left = 6
     Height = 34
-    Top = 348
-    Width = 400
+    Top = 340
+    Width = 388
     OKButton.Name = 'OKButton'
     OKButton.DefaultCaption = True
     OKButton.OnClick = OKButtonClick
@@ -46,7 +46,7 @@ object fEntry: TfEntry
     Left = 72
     Height = 23
     Top = 8
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 1
     Text = 'edUsername'
@@ -55,7 +55,7 @@ object fEntry: TfEntry
     Left = 72
     Height = 23
     Top = 32
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 2
     Text = 'edPassword'
@@ -85,7 +85,7 @@ object fEntry: TfEntry
     Left = 72
     Height = 23
     Top = 120
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight]
     ItemHeight = 15
     TabOrder = 3
@@ -100,9 +100,9 @@ object fEntry: TfEntry
   end
   object meNotes: TMemo
     Left = 72
-    Height = 102
+    Height = 94
     Top = 146
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
       'meNotes'
@@ -112,7 +112,7 @@ object fEntry: TfEntry
   object Label7: TLabel
     Left = 8
     Height = 15
-    Top = 264
+    Top = 256
     Width = 41
     Anchors = [akLeft, akBottom]
     Caption = 'Created'
@@ -120,7 +120,7 @@ object fEntry: TfEntry
   object edCreated: TEdit
     Left = 72
     Height = 23
-    Top = 256
+    Top = 248
     Width = 328
     Anchors = [akLeft, akBottom]
     Color = clForm
@@ -131,7 +131,7 @@ object fEntry: TfEntry
   object edModified: TEdit
     Left = 72
     Height = 23
-    Top = 284
+    Top = 276
     Width = 328
     Anchors = [akLeft, akBottom]
     Color = clForm
@@ -142,7 +142,7 @@ object fEntry: TfEntry
   object Label8: TLabel
     Left = 8
     Height = 15
-    Top = 292
+    Top = 284
     Width = 48
     Anchors = [akLeft, akBottom]
     Caption = 'Modified'
@@ -150,7 +150,7 @@ object fEntry: TfEntry
   object edAccessed: TEdit
     Left = 72
     Height = 23
-    Top = 312
+    Top = 304
     Width = 328
     Anchors = [akLeft, akBottom]
     Color = clForm
@@ -161,7 +161,7 @@ object fEntry: TfEntry
   object Label9: TLabel
     Left = 8
     Height = 15
-    Top = 320
+    Top = 312
     Width = 49
     Anchors = [akLeft, akBottom]
     Caption = 'Accessed'
@@ -170,7 +170,7 @@ object fEntry: TfEntry
     Left = 72
     Height = 23
     Top = 64
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight]
     ItemHeight = 15
     TabOrder = 8
@@ -180,7 +180,7 @@ object fEntry: TfEntry
     Left = 72
     Height = 23
     Top = 96
-    Width = 328
+    Width = 316
     Anchors = [akTop, akLeft, akRight]
     ItemHeight = 15
     TabOrder = 9

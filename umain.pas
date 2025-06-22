@@ -9,6 +9,17 @@ uses
   ComCtrls, Menus, ShellCtrls, PairSplitter, SqlDb, SQLite3Conn, OdbcConn,
   Clipbrd, LCLIntf, IniPropStorage;
 
+
+{TODO
+
+     1. Encrypt sqlite database
+     2. Save all open files
+     3. Open all files
+     4. Populate recent filelist submenu
+     5.
+
+}
+
 const
   icoSilver = 0;
   icoRed = 1;
@@ -21,7 +32,7 @@ type
   TfMain = class(TForm)
     ilBig: TImageList;
     ilSmall: TImageList;
-    IniPropStorage1: TIniPropStorage;
+    iniMain: TIniPropStorage;
     lvAccounts: TListView;
     miEntryLinkOpen: TMenuItem;
     miOpenLink: TMenuItem;
@@ -74,10 +85,7 @@ type
     Separator3: TMenuItem;
     Separator4: TMenuItem;
     Separator5: TMenuItem;
-    con: TSQLite3Connection;
-    sq: TSQLQuery;
     tbFileNew: TToolButton;
-    tr: TSQLTransaction;
     sbMain: TStatusBar;
     tbCards: TToolBar;
     tbEditAutoType: TToolButton;
@@ -87,10 +95,8 @@ type
     ToolButton1: TToolButton;
     tvAccounts: TTreeView;
     procedure FormActivate(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
-    procedure lvAccountsAdvancedCustomDrawItem(Sender: TCustomListView;
-      Item: TListItem; State: TCustomDrawState; Stage: TCustomDrawStage;
-      var DefaultDraw: boolean);
+    procedure lvAccountsCustomDrawItem(Sender: TCustomListView;
+      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure lvAccountsSelectItem(Sender: TObject; Item: TListItem;
       Selected: boolean);
     procedure miEntryDeleteClick(Sender: TObject);
@@ -104,8 +110,10 @@ type
     procedure miFileNewClick(Sender: TObject);
     procedure miFileOpenClick(Sender: TObject);
     procedure miHelpAboutClick(Sender: TObject);
+    procedure miToolsOptionsClick(Sender: TObject);
     procedure tbEditAutoTypeClick(Sender: TObject);
     procedure tcMainChange(Sender: TObject);
+    procedure tvAccountsSelectionChanged(Sender: TObject);
   private
 
   public
@@ -121,7 +129,7 @@ implementation
 
 { TfMain }
 
-uses uMiscellaneous, uEntry, uAbout;
+uses uDataModule, uMiscellaneous, uEntry, uOptions, uAbout;
 
 var
   sLFiles: TStringList;
@@ -260,16 +268,18 @@ begin
   fAbout.ShowModal;
 end;
 
-procedure TfMain.lvAccountsAdvancedCustomDrawItem(Sender: TCustomListView;
-  Item: TListItem; State: TCustomDrawState; Stage: TCustomDrawStage;
-  var DefaultDraw: boolean);
+procedure TfMain.miToolsOptionsClick(Sender: TObject);
+begin
+  if fOptions.ShowModal = mrOk then
+  begin
+    tvAccountsSelectionChanged(Sender);
+  end;
+end;
+
+procedure TfMain.lvAccountsCustomDrawItem(Sender: TCustomListView;
+  Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
   Item.Caption := IntToStr(Item.Index + 1);
-  {if (Item.SubItems.Count > 1) and ((Item.SubItems[1] = 'Saturday') or
-    (Item.SubItems[1] = 'Sunday')) then
-    Sender.Canvas.Font.Color := clRed
-  else
-    Sender.Canvas.Font.Color := clDefault;}
 end;
 
 procedure TfMain.lvAccountsSelectItem(Sender: TObject; Item: TListItem;
@@ -290,16 +300,18 @@ begin
     begin
       Id := lvAccounts.Items[i].ImageIndex;
       strFile := sLFiles[tcMain.TabIndex];
-      con.DatabaseName := strFile;
-      con.Connected := True;
-      sq.Close;
-      sq.SQL.Clear;
-      sq.SQL.Add('Delete From tAccounts Where Id=:Id;');
-      sq.ParamByName('Id').AsInteger := Id;
-      sq.ExecSQL;
-      tr.Commit;
-      sq.Close;
-      con.Connected := False;
+      fdm.con.DatabaseName := strFile;
+      fdm.con.Connected := True;
+      if fOptions.chEncryptDatabase.Checked then
+        fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+      fdm.sq.Close;
+      fdm.sq.SQL.Clear;
+      fdm.sq.SQL.Add('Delete From tAccounts Where Id=:Id;');
+      fdm.sq.ParamByName('Id').AsInteger := Id;
+      fdm.sq.ExecSQL;
+      fdm.tr.Commit;
+      fdm.sq.Close;
+      fdm.con.Connected := False;
       lvAccounts.Items[i].Delete;
     end;
 end;
@@ -314,80 +326,85 @@ begin
   begin
     Id := lvAccounts.Items[i].ImageIndex;
     strFile := sLFiles[tcMain.TabIndex];
-    con.DatabaseName := strFile;
-    con.Connected := True;
-    sq.Close;
-    sq.SQL.Clear;
-    sq.SQL.Add('Select * From tAccounts Where Id=:Id;');
-    sq.ParamByName('Id').AsInteger := Id;
-    sq.Open;
+    fdm.con.DatabaseName := strFile;
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select * From tAccounts Where Id=:Id;');
+    fdm.sq.ParamByName('Id').AsInteger := Id;
+    fdm.sq.Open;
     fEntry.Caption := 'Edit Entry';
-    fEntry.edUsername.Text := sq.FieldByName('Username').AsString;
-    fEntry.edPassword.Text := sq.FieldByName('Password').AsString;
-    fEntry.coLink.Text := sq.FieldByName('Link').AsString;
-    fEntry.coTitle.Text := sq.FieldByName('Title').AsString;
-    fEntry.coCategory.Text := sq.FieldByName('Category').AsString;
-    fEntry.meNotes.Text := sq.FieldByName('Notes').AsString;
-    fEntry.edCreated.Text := sq.FieldByName('Created').AsString;
-    fEntry.edModified.Text := sq.FieldByName('Modified').AsString;
-    fEntry.edAccessed.Text := sq.FieldByName('Accessed').AsString;
-    sq.Close;
-    sq.SQL.Clear;
-    sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
-    sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
-    sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
-    sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
-    sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
-    sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
-    sq.Open;
+    fEntry.edUsername.Text := fdm.sq.FieldByName('Username').AsString;
+    fEntry.edPassword.Text := fdm.sq.FieldByName('Password').AsString;
+    fEntry.coLink.Text := fdm.sq.FieldByName('Link').AsString;
+    fEntry.coTitle.Text := fdm.sq.FieldByName('Title').AsString;
+    fEntry.coCategory.Text := fdm.sq.FieldByName('Category').AsString;
+    fEntry.meNotes.Text := fdm.sq.FieldByName('Notes').AsString;
+    fEntry.edCreated.Text := fdm.sq.FieldByName('Created').AsString;
+    fEntry.edModified.Text := fdm.sq.FieldByName('Modified').AsString;
+    fEntry.edAccessed.Text := fdm.sq.FieldByName('Accessed').AsString;
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
+    fdm.sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
+    fdm.sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
+    fdm.sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
+    fdm.sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
+    fdm.sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
+    fdm.sq.Open;
     fEntry.coLink.Items.Clear;
     fEntry.coTitle.Items.Clear;
     fEntry.coCategory.Items.Clear;
-    while not sq.EOF do
+    while not fdm.sq.EOF do
     begin
-      case sq.FieldByName('B').AsInteger of
+      case fdm.sq.FieldByName('B').AsInteger of
         0:
-          fEntry.coLink.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coLink.Items.Add(fdm.sq.FieldByName('A').AsString);
         1:
-          fEntry.coTitle.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coTitle.Items.Add(fdm.sq.FieldByName('A').AsString);
         2:
-          fEntry.coCategory.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coCategory.Items.Add(fdm.sq.FieldByName('A').AsString);
       end;
-      sq.Next;
+      fdm.sq.Next;
     end;
-    sq.Close;
+    fdm.sq.Close;
     if fEntry.Execute then
     begin
-      sq.SQL.Clear;
-      sq.SQL.Add('Update tAccounts ');
-      sq.SQL.Add('Set Username=:Username,Password=:Password,Link=:Link,');
-      sq.SQL.Add('Title=:Title,Category=:Category,Notes=:Notes,Modified=:Modified');
-      sq.SQL.Add('Where Id=:Id;');
-      sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
-      sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
-      sq.ParamByName('Link').AsString := fEntry.coLink.Text;
-      sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
-      sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
-      sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
-      sq.ParamByName('Modified').AsString :=
+      fdm.sq.SQL.Clear;
+      fdm.sq.SQL.Add('Update tAccounts ');
+      fdm.sq.SQL.Add('Set Username=:Username,Password=:Password,Link=:Link,');
+      fdm.sq.SQL.Add('Title=:Title,Category=:Category,Notes=:Notes,Modified=:Modified');
+      fdm.sq.SQL.Add('Where Id=:Id;');
+      fdm.sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
+      fdm.sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
+      fdm.sq.ParamByName('Link').AsString := fEntry.coLink.Text;
+      fdm.sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
+      fdm.sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
+      fdm.sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
+      fdm.sq.ParamByName('Modified').AsString :=
         FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
-      sq.ParamByName('Id').AsInteger := Id;
-      sq.ExecSQL;
-      tr.Commit;
-      sq.Close;
+      fdm.sq.ParamByName('Id').AsInteger := Id;
+      fdm.sq.ExecSQL;
+      fdm.tr.Commit;
+      fdm.sq.Close;
 
-      sq.SQL.Clear;
-      sq.SQL.Add('Select * From tAccounts Where Id=:Id;');
-      sq.ParamByName('Id').AsInteger := Id;
-      sq.Open;
-      lvAccounts.Items[i].SubItems[0] := sq.FieldByName('Username').AsString;
-      lvAccounts.Items[i].SubItems[1] := sq.FieldByName('Password').AsString;
-      lvAccounts.Items[i].SubItems[2] := sq.FieldByName('Link').AsString;
-      sq.Close;
+      fdm.sq.SQL.Clear;
+      fdm.sq.SQL.Add('Select Id,Username,Password,Link From tAccounts Where Id=:Id;');
+      fdm.sq.ParamByName('Id').AsInteger := Id;
+      fdm.sq.Open;
+      lvAccounts.Items[i].SubItems[0] := fdm.sq.FieldByName('Username').AsString;
+      if fOptions.chHidePasswords.Checked then
+        lvAccounts.Items[i].SubItems[1] := '**********'
+      else
+        lvAccounts.Items[i].SubItems[1] := fdm.sq.FieldByName('Password').AsString;
+      lvAccounts.Items[i].SubItems[2] := fdm.sq.FieldByName('Link').AsString;
+      fdm.sq.Close;
     end;
 
-    sq.Close;
-    con.Connected := False;
+    fdm.sq.Close;
+    fdm.con.Connected := False;
   end;
 end;
 
@@ -407,8 +424,10 @@ begin
   if tcMain.TabIndex >= 0 then
   begin
     strFile := sLFiles[tcMain.TabIndex];
-    con.DatabaseName := strFile;
-    con.Connected := True;
+    fdm.con.DatabaseName := strFile;
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
     fEntry.Caption := 'New Entry';
     fEntry.edUsername.Text := '';
     fEntry.edPassword.Text := '';
@@ -419,52 +438,52 @@ begin
     fEntry.edCreated.Text := '';
     fEntry.edModified.Text := '';
     fEntry.edAccessed.Text := '';
-    sq.Close;
-    sq.SQL.Clear;
-    sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
-    sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
-    sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
-    sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
-    sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
-    sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
-    sq.Open;
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select Distinct Link As A,0 As B From tAccounts');
+    fdm.sq.SQL.Add('Where Link Is Not Null Group By Link Union All');
+    fdm.sq.SQL.Add('Select Distinct Title,1 As Type From tAccounts');
+    fdm.sq.SQL.Add('Where Title Is Not Null Group By Title Union All');
+    fdm.sq.SQL.Add('Select Distinct Category,2 As Type From tAccounts');
+    fdm.sq.SQL.Add('Where Category Is Not Null Group By Category Order By B,A;');
+    fdm.sq.Open;
     fEntry.coLink.Items.Clear;
     fEntry.coTitle.Items.Clear;
     fEntry.coCategory.Items.Clear;
-    while not sq.EOF do
+    while not fdm.sq.EOF do
     begin
-      case sq.FieldByName('B').AsInteger of
+      case fdm.sq.FieldByName('B').AsInteger of
         0:
-          fEntry.coLink.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coLink.Items.Add(fdm.sq.FieldByName('A').AsString);
         1:
-          fEntry.coTitle.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coTitle.Items.Add(fdm.sq.FieldByName('A').AsString);
         2:
-          fEntry.coCategory.Items.Add(sq.FieldByName('A').AsString);
+          fEntry.coCategory.Items.Add(fdm.sq.FieldByName('A').AsString);
       end;
-      sq.Next;
+      fdm.sq.Next;
     end;
-    sq.Close;
+    fdm.sq.Close;
     if fEntry.Execute then
     begin
       strCreated := FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
 
-      sq.SQL.Clear;
-      sq.SQL.Add('Insert Into tAccounts');
-      sq.SQL.Add('(Username,Password,Link,Title,Category,Notes,Created)');
-      sq.SQL.Add('Values');
-      sq.SQL.Add('(:Username,:Password,:Link,:Title,:Category,:Notes,:Created);');
-      sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
-      sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
-      sq.ParamByName('Link').AsString := fEntry.coLink.Text;
-      sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
-      sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
-      sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
-      sq.ParamByName('Created').AsString := strCreated;
-      sq.ExecSQL;
-      tr.Commit;
-      sq.Close;
+      fdm.sq.SQL.Clear;
+      fdm.sq.SQL.Add('Insert Into tAccounts');
+      fdm.sq.SQL.Add('(Username,Password,Link,Title,Category,Notes,Created)');
+      fdm.sq.SQL.Add('Values');
+      fdm.sq.SQL.Add('(:Username,:Password,:Link,:Title,:Category,:Notes,:Created);');
+      fdm.sq.ParamByName('Username').AsString := fEntry.edUsername.Text;
+      fdm.sq.ParamByName('Password').AsString := fEntry.edPassword.Text;
+      fdm.sq.ParamByName('Link').AsString := fEntry.coLink.Text;
+      fdm.sq.ParamByName('Title').AsString := fEntry.coTitle.Text;
+      fdm.sq.ParamByName('Category').AsString := fEntry.coCategory.Text;
+      fdm.sq.ParamByName('Notes').AsString := fEntry.meNotes.Text;
+      fdm.sq.ParamByName('Created').AsString := strCreated;
+      fdm.sq.ExecSQL;
+      fdm.tr.Commit;
+      fdm.sq.Close;
 
-      con.Connected := False;
+      fdm.con.Connected := False;
       tcMainChange(Sender);
     end;
   end;
@@ -473,10 +492,15 @@ end;
 procedure TfMain.miEntryPasswordCopyClick(Sender: TObject);
 var
   i: integer;
+  strPassword: string;
 begin
   i := lvAccounts.ItemIndex;
   if (tcMain.TabIndex >= 0) and (i >= 0) then
-    ClipBoard.AsText := lvAccounts.Items[i].SubItems[1];
+  begin
+    //***PASSWORD***
+    strPassword := GetPasswordFromDB(sbMain.Hint, lvAccounts.Items[i].ImageIndex);
+    ClipBoard.AsText := strPassword;//lvAccounts.Items[i].SubItems[1];
+  end;
 end;
 
 procedure TfMain.miEntryLinkCopyClick(Sender: TObject);
@@ -523,21 +547,23 @@ begin
   if sFile.Execute then
   begin
     strFile := sFile.FileName;
-    con.DatabaseName := strFile;
+    fdm.con.DatabaseName := strFile;
     if FileExists(strFile) then DeleteFile(strFile);
-    con.Connected := True;
-    sq.Close;
-    sq.SQL.Clear;
-    sq.SQL.Add('CREATE TABLE tAccounts ( ' +
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('CREATE TABLE tAccounts ( ' +
       'Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' + 'Title TEXT,' +
       'Username TEXT,' + 'Password TEXT,' + 'Link TEXT,' + 'Notes TEXT,' +
       'Created TEXT(23),' + 'Modified TEXT(23),' + 'Accessed TEXT(23),' +
       'Icon BLOB,' + 'AutoType TEXT DEFAULT (''{username}{tab}{password}{enter}''),' +
       'Category TEXT);');
-    sq.ExecSQL;
-    tr.Commit;
-    sq.Close;
-    con.Connected := False;
+    fdm.sq.ExecSQL;
+    fdm.tr.Commit;
+    fdm.sq.Close;
+    fdm.con.Connected := False;
 
     strExt := ExtractFileExt(strFile);
     strName := ExtractFileName(strFile);
@@ -555,57 +581,31 @@ begin
   end;
 end;
 
-procedure TfMain.FormCreate(Sender: TObject);
-var
-  AppDir: string;
-begin
-  AppDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
-
-  try
-    {$IFDEF WIN32}
-    sqlite3conn.SQLiteLibraryName := AppDir + 'x32-sqlite3.dll';
-    {$ENDIF}
-    {$IFDEF WIN64}
-    sqlite3conn.SQLiteLibraryName := AppDir + 'x64-sqlite3.dll';
-    //sqlite3Dyn.SQLiteDefaultLibrary := AppDir + 'x64-sqlite3.dll';
-    {$ENDIF}
-    if not FileExists(sqlite3conn.SQLiteLibraryName) then
-      sqlite3conn.SQLiteLibraryName := AppDir + 'sqlite3.dll';
-    //SQLite3Connection1.Connected := True;
-  except
-    {$IFDEF WINDOWS}
-    MessageDlg('Library sqlite3.dll not found!', mtError, [mbOK], 0);
-    {$ELSE}
-    MessageDlg('Library libsqlite3.so not found!'#13#13 +
-      'Type this in Terminal:'#13 + 'sudo apt-get install libsqlite3-dev',
-      mtError, [mbOK], 0);
-    {$ENDIF}
-    Application.Terminate;
-  end;
-  sq.PacketRecords := -1;
-end;
-
 procedure TfMain.FormActivate(Sender: TObject);
 var
   strFile, strName, strExt: string;
 begin
-  strFile := sbMain.Hint;
-  if FileExists(strFile) then
+  if fOptions.chReopenLastFile.Checked then
   begin
-    strExt := ExtractFileExt(strFile);
-    strName := ExtractFileName(strFile);
-    strName := Copy(strName, 1, Length(strName) - Length(strExt));
+    strFile := sbMain.Hint;
+    if FileExists(strFile) then
+    begin
+      strExt := ExtractFileExt(strFile);
+      strName := ExtractFileName(strFile);
+      strName := Copy(strName, 1, Length(strName) - Length(strExt));
 
-    sLFiles.Add(LowerCase(strFile));
-    tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
-    tcMainChange(Sender);
+      sLFiles.Add(LowerCase(strFile));
+      tcMain.Tabs.AddObject(strName, TCustomObj.Create(0, strFile));
+      tcMainChange(Sender);
+    end;
   end;
 end;
 
 procedure TfMain.tbEditAutoTypeClick(Sender: TObject);
 var
-  Id, i: integer;
-  strFile, strAccessed, strUsername, strPassword: string;
+  Id, i, j: integer;
+  strFile, strAccessed, strUsername, strPassword, strLink, strAction: string;
+  sLActions: TStringList;
 begin
   // Example: Send "Hello World!" to the currently active application
   // You might want to use FindWindow and SetForegroundWindow first
@@ -624,35 +624,70 @@ begin
   if i >= 0 then
   begin
     strUsername := lvAccounts.Items[i].SubItems[0];
-    strPassword := lvAccounts.Items[i].SubItems[1];
+    //***PASSWORD***
+    //strPassword := lvAccounts.Items[i].SubItems[1];
+    strPassword := GetPasswordFromDB(sbMain.Hint, lvAccounts.Items[i].ImageIndex);
+    strLink := lvAccounts.Items[i].SubItems[2];
+
+    if Sender is TMenuItem then
+      strAction := (Sender as TMenuItem).Hint
+    else if Sender is TToolButton then
+      strAction := (Sender as TToolButton).Hint;
+
+    sLActions := TStringList.Create;
+    ExtractWords(strAction, sLActions);
+
     Application.Minimize;
 
-    SendString(strUsername);
-    PressKey(VK_TAB, True); // Press Tab
-    PressKey(VK_TAB, False); // Release Tab
-    SendString(strPassword);
-    PressKey(VK_RETURN, True); // Press Enter
-    PressKey(VK_RETURN, False); // Release Enter
+    for j := 1 to sLActions.Count do
+    begin
+      strAction := sLActions[j - 1];
+      case LowerCase(strAction) of
+        '{username}':
+          SendString(strUsername);
+        '{tab}':
+        begin
+          PressKey(VK_TAB, True); // Press Tab
+          PressKey(VK_TAB, False); // Release Tab
+        end;
+        '{password}':
+          SendString(strPassword);
+        '{enter}':
+        begin
+          PressKey(VK_RETURN, True); // Press Enter
+          PressKey(VK_RETURN, False); // Release Enter
+        end;
+        '{link}':
+          SendString(strLink);
+      end;
+    end;
+    sLActions.Free;
 
     strFile := sLFiles[tcMain.TabIndex];
-    con.DatabaseName := strFile;
-    con.Connected := True;
-
     Id := lvAccounts.Items[i].ImageIndex;
     strAccessed := FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now());
 
-    sq.SQL.Clear;
-    sq.SQL.Add('Update tAccounts Set Accessed=:Accessed');
-    sq.SQL.Add('Where Id=:Id;');
-    sq.ParamByName('Accessed').AsString := strAccessed;
-    sq.ParamByName('Id').AsInteger := Id;
-    sq.ExecSQL;
-    tr.Commit;
-    sq.Close;
+    fdm.con.DatabaseName := strFile;
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Update tAccounts Set Accessed=:Accessed');
+    fdm.sq.SQL.Add('Where Id=:Id;');
+    fdm.sq.ParamByName('Accessed').AsString := strAccessed;
+    fdm.sq.ParamByName('Id').AsInteger := Id;
+    fdm.sq.ExecSQL;
+    fdm.tr.Commit;
+    fdm.sq.Close;
 
-    con.Connected := False;
-
+    fdm.con.Connected := False;
     lvAccounts.Items[i].StateIndex := icoGreen;
+
+    if fOptions.chRestoreAfterAutoType.Checked then
+      Application.Restore;
+    if fOptions.chSelectNextAfterAutoType.Checked then
+      if lvAccounts.ItemIndex < lvAccounts.Items.Count - 1 then
+        lvAccounts.ItemIndex := lvAccounts.ItemIndex + 1;
   end;
 end;
 
@@ -660,39 +695,97 @@ procedure TfMain.tcMainChange(Sender: TObject);
 var
   strFile: string;
 begin
-  lvAccounts.Items.BeginUpdate;
-  lvAccounts.Items.Clear;
-
   if tcMain.TabIndex >= 0 then
   begin
     //fMain.Caption := Format('TabIndex = %d', [tcMain.TabIndex]);
     //strFile := TCustomObj(tcMain.Tabs.Objects[tcMain.TabIndex]).Name;
     //strFile := 'C:\Users\Stefan\OneDrive\Desktop\LazPass\lazpass.sqlite';
     strFile := sLFiles[tcMain.TabIndex];
-    con.DatabaseName := strFile;
-    con.Connected := True;
-    sq.Close;
-    sq.SQL.Clear;
-    sq.SQL.Add('Select * From tAccounts Order By Username;');
-    sq.Open;
-    sbMain.Panels[0].Text := Format('%d entries', [sq.RecordCount]);
+    fdm.con.DatabaseName := strFile;
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select Count(Id) As Cnt From tAccounts;');
+    fdm.sq.Open;
+    sbMain.Panels[0].Text := Format('%d entries', [fdm.sq.FieldByName('Cnt').AsInteger]);
     sbMain.Panels[1].Text := strFile;
+
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select Distinct IfNull(Category,'''') As Category From tAccounts');
+    fdm.sq.SQL.Add('Group By IfNull(Category,'''') Order By Category');
+    fdm.sq.Open;
+    tvAccounts.Items.Clear;
+    tvAccounts.Items.Add(nil, '[ALL]');
+    while not fdm.sq.EOF do
+    begin
+      tvAccounts.Items.Add(nil, fdm.sq.FieldByName('Category').AsString);
+      fdm.sq.Next;
+    end;
+
+    tvAccounts.Items.GetFirstNode.Selected := True;
+    tvAccountsSelectionChanged(Sender);
+  end;
+end;
+
+procedure TfMain.tvAccountsSelectionChanged(Sender: TObject);
+var
+  strFile, strCategory: string;
+begin
+  lvAccounts.Items.BeginUpdate;
+  lvAccounts.Items.Clear;
+
+  if (tcMain.TabIndex >= 0) and (tvAccounts.Items.Count > 0) then
+  begin
+    //fMain.Caption := Format('TabIndex = %d', [tcMain.TabIndex]);
+    //strFile := TCustomObj(tcMain.Tabs.Objects[tcMain.TabIndex]).Name;
+    //strFile := 'C:\Users\Stefan\OneDrive\Desktop\LazPass\lazpass.sqlite';
+    strFile := sLFiles[tcMain.TabIndex];
+    fdm.con.DatabaseName := strFile;
+    fdm.con.Connected := True;
+    if fOptions.chEncryptDatabase.Checked then
+      fdm.con.ExecuteDirect('PRAGMA key = ''your_encryption_password''');
+
+    fdm.sq.Close;
+    fdm.sq.SQL.Clear;
+    fdm.sq.SQL.Add('Select Id,Username,Password,Link,');
+    fdm.sq.SQL.Add('IfNull(Date(Accessed)=Date(''now''),0) As Accessed');
+    fdm.sq.SQL.Add('From tAccounts ');
+    strCategory := tvAccounts.Selected.Text;
+    if strCategory <> '[ALL]' then
+    begin
+      fdm.sq.SQL.Add('Where IfNull(Category,'''')=:Category');
+      fdm.sq.ParamByName('Category').AsString := strCategory;
+    end;
+    fdm.sq.SQL.Add('Order By Username;');
+    //Clipboard.AsText := sq.SQL.Text; ShowMessage('>'+strCategory + '<');
+    fdm.sq.Open;
+
     sbMain.Hint := strFile;
-    while not sq.EOF do
+    while not fdm.sq.EOF do
     begin
       with lvAccounts.Items.Add do
       begin
-        StateIndex := icoSilver;
-        ImageIndex := sq.FieldByName('Id').AsInteger;
+        if fdm.sq.FieldByName('Accessed').AsInteger = 1 then
+          StateIndex := icoGreen
+        else
+          StateIndex := icoSilver;
+        ImageIndex := fdm.sq.FieldByName('Id').AsInteger;
         Caption := Format('%d', [lvAccounts.Items.Count]);
-        SubItems.Add(sq.FieldByName('Username').AsString);
-        SubItems.Add(sq.FieldByName('Password').AsString);
-        SubItems.Add(sq.FieldByName('Link').AsString);
+        SubItems.Add(fdm.sq.FieldByName('Username').AsString);
+        if fOptions.chHidePasswords.Checked then
+          SubItems.Add('**********')
+        else
+          SubItems.Add(fdm.sq.FieldByName('Password').AsString);
+        SubItems.Add(fdm.sq.FieldByName('Link').AsString);
       end;
-      sq.Next;
+      fdm.sq.Next;
     end;
-    sq.Close;
-    con.Connected := False;
+    fdm.sq.Close;
+    fdm.con.Connected := False;
   end;
 
   lvAccounts.Items.EndUpdate;
@@ -700,6 +793,7 @@ end;
 
 initialization
   sLFiles := TStringList.Create;
+  AppDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
 
 finalization
   sLFiles.Free;

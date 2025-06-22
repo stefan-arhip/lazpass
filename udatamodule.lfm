@@ -1,0 +1,34 @@
+object fDm: TfDm
+  OnCreate = DataModuleCreate
+  OldCreateOrder = False
+  Height = 150
+  HorizontalOffset = 917
+  VerticalOffset = 127
+  Width = 303
+  object con: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    KeepConnection = False
+    Transaction = tr
+    LogEvents = []
+    AlwaysUseBigint = False
+    Left = 112
+    Top = 32
+  end
+  object tr: TSQLTransaction
+    Active = False
+    Action = caNone
+    Database = con
+    Left = 176
+    Top = 32
+  end
+  object sq: TSQLQuery
+    FieldDefs = <>
+    Database = con
+    Transaction = tr
+    Params = <>
+    Macros = <>
+    Left = 56
+    Top = 32
+  end
+end
