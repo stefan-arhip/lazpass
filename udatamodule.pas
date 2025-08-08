@@ -45,7 +45,7 @@ begin
     {$ENDIF}
     if not FileExists(sqlite3conn.SQLiteLibraryName) then
       sqlite3conn.SQLiteLibraryName := AppDir + 'sqlite3.dll';
-    sqlite3conn.SQLiteLibraryName:= AppDir + 'sqlcipher.dll';
+    //sqlite3conn.SQLiteLibraryName:= AppDir + 'sqlcipher.dll';
     //SQLite3Connection1.Connected := True;
   except
     {$IFDEF WINDOWS}

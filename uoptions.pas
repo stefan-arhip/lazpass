@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ButtonPanel, StdCtrls,
-  IniPropStorage;
+  IniPropStorage, Spin;
 
 type
 
@@ -19,7 +19,9 @@ type
     chReopenLastFile: TCheckBox;
     chSelectNextAfterAutoType: TCheckBox;
     chRestoreAfterAutoType: TCheckBox;
+    seDelayAutotype: TFloatSpinEdit;
     iniMain: TIniPropStorage;
+    Label1: TLabel;
   private
 
   public

@@ -8,7 +8,7 @@ object fMain: TfMain
   ClientWidth = 600
   Menu = mMain
   SessionProperties = 'Height;Left;Top;Width;sbMain.Hint'
-  LCLVersion = '4.0.0.3'
+  LCLVersion = '4.2.0.0'
   OnActivate = FormActivate
   object sbMain: TStatusBar
     Left = 0

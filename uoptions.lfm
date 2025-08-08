@@ -9,7 +9,7 @@ object fOptions: TfOptions
   ClientWidth = 400
   Position = poMainFormCenter
   SessionProperties = 'chReopenLastFile.Checked;chRestoreAfterAutoType.Checked;chSelectNextAfterAutoType.Checked;chHidePasswords.Checked'
-  LCLVersion = '4.0.0.3'
+  LCLVersion = '4.2.0.0'
   object ButtonPanel1: TButtonPanel
     Left = 6
     Height = 34
@@ -30,7 +30,7 @@ object fOptions: TfOptions
     Left = 16
     Height = 19
     Top = 8
-    Width = 231
+    Width = 232
     Caption = 'Restore LazPass window after Auto-Type'
     Checked = True
     State = cbChecked
@@ -73,6 +73,22 @@ object fOptions: TfOptions
     Width = 139
     Caption = 'Encrypt sqlite database'
     TabOrder = 5
+  end
+  object Label1: TLabel
+    Left = 16
+    Height = 15
+    Top = 241
+    Width = 146
+    Caption = 'Delayed autotype [seconds]'
+  end
+  object seDelayAutotype: TFloatSpinEdit
+    Left = 176
+    Height = 23
+    Top = 240
+    Width = 50
+    Increment = 0.1
+    MaxValue = 10
+    TabOrder = 6
   end
   object iniMain: TIniPropStorage
     StoredValues = <>

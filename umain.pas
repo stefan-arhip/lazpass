@@ -7,7 +7,7 @@ interface
 uses
   Windows, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
   ComCtrls, Menus, ShellCtrls, PairSplitter, SqlDb, SQLite3Conn, OdbcConn,
-  Clipbrd, LCLIntf, IniPropStorage;
+  Clipbrd, LCLIntf, IniPropStorage, Crt;
 
 
 {TODO
@@ -636,6 +636,8 @@ begin
 
     sLActions := TStringList.Create;
     ExtractWords(strAction, sLActions);
+
+    Delay(Round(fOptions.seDelayAutotype.Value * 1000));
 
     Application.Minimize;
 
